@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Passenger Tracking{% endblock %}
+
+{% block content %}
+
+<h2 class="text-xl font-semibold mb-4">Passenger Tracking</h2>
+
+<div class="bg-white shadow rounded-lg p-4 mb-4">
+  <form method="post" class="flex flex-col md:flex-row gap-3 items-end">
+    <div class="flex-1">
+      <label class="block text-sm mb-1">
+        Search by Ticket Number or Full Name
+      </label>
+      <input type="text" name="query" class="w-full border rounded px-3 py-2 text-sm" required />
+    </div>
+    <button type="submit" class="bg-slate-900 text-white px-4 py-2 rounded text-sm">
+      Search & Track
+    </button>
+  </form>
+</div>
+
+{% if result %}
+
+  {% if result.status == 'not_in_db' %}
+    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded text-sm">
+      Passenger not found in database ❌
+    </div>
+
+  {% else %}
+
+    <div class="bg-white shadow rounded-lg p-4 space-y-2">
+      <h3 class="text-sm font-semibold mb-2">Passenger Details</h3>
+
+      <p class="text-sm"><span class="font-semibold">Name:</span> {{ result.full_name }}</p>
+      <p class="text-sm"><span class="font-semibold">Mobile:</span> {{ result.mobile_number }}</p>
+      <p class="text-sm"><span class="font-semibold">Ticket:</span> {{ result.ticket_number }}</p>
+      <p class="text-sm"><span class="font-semibold">Flight:</span> {{ result.flight_number }}</p>
+      <p class="text-sm"><span class="font-semibold">Airline:</span> {{ result.airline }}</p>
+      <p class="text-sm"><span class="font-semibold">Destination:</span> {{ result.destination }}</p>
+      <p class="text-sm"><span class="font-semibold">Departure:</span> {{ result.departure_datetime }}</p>
+      <p class="text-sm"><span class="font-semibold">Baggage ID:</span> {{ result.baggage_id }}</p>
+
+      <hr class="my-2">
+
+      <!-- ✅ DETECTED -->
+      {% if result.status == 'found_in_zone' %}
+        <p class="text-sm">
+          <span class="font-semibold">Current Zone:</span> {{ result.last_seen_zone }} ✅
+        </p>
+        <p class="text-sm">
+          <span class="font-semibold">Detected At:</span> {{ result.last_seen_time }}
+        </p>
+
+      <!-- ❌ NOT DETECTED -->
+      {% elif result.status == 'registered_not_found' %}
+        <p class="text-sm">
+          <span class="font-semibold">Current Zone:</span> Not detected ⚠️
+        </p>
+
+        {% if result.last_seen_zone %}
+          <p class="text-sm">
+            <span class="font-semibold">Last Seen Zone:</span> {{ result.last_seen_zone }}
+          </p>
+          <p class="text-sm">
+            <span class="font-semibold">Last Seen Time:</span> {{ result.last_seen_time }}
+          </p>
+        {% endif %}
+      {% endif %}
+
+      <!-- Mark as Boarded -->
+      <form method="post" action="{{ url_for('mark_boarded') }}" class="mt-3">
+        <input type="hidden" name="ticket_number" value="{{ result.ticket_number }}">
+        <button type="submit" class="px-3 py-1.5 rounded bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">
+          Mark as Boarded
+        </button>
+      </form>
+
+      <!-- Alerts -->
+      {% if result.urgency == "critical" %}
+        <div class="mt-3 px-4 py-2 bg-red-100 border border-red-300 text-red-700 text-sm rounded-md">
+          Passenger not detected and {{ result.time_message }}!
+        </div>
+
+      {% elif result.urgency == "warning" %}
+        <div class="mt-3 px-4 py-2 bg-yellow-100 border border-yellow-300 text-yellow-800 text-sm rounded-md">
+          {{ result.time_message }} – monitoring advised.
+        </div>
+
+      {% elif result.urgency == "normal" and result.time_message %}
+        <div class="mt-3 px-4 py-2 bg-green-100 border border-green-300 text-green-800 text-sm rounded-md">
+          {{ result.time_message }}
+        </div>
+
+      {% elif result.time_message %}
+        <p class="text-sm text-slate-600 mt-2">
+          {{ result.time_message }}
+        </p>
+      {% endif %}
+
+    </div>
+
+  {% endif %}
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Passengers by Flight{% endblock %}
+
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Passengers by Flight / Airline</h2>
+
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-4">
+  <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Flight Number</label>
+      <select name="flight" class="w-full border rounded px-2 py-2 text-sm">
+        <option value="">All Flights</option>
+        {% for f in flights %}
+          {% if f %}
+          <option value="{{ f }}" {% if f == selected_flight %}selected{% endif %}>{{ f }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Airline</label>
+      <select name="airline" class="w-full border rounded px-2 py-2 text-sm">
+        <option value="">All Airlines</option>
+        {% for a in airlines %}
+          {% if a %}
+          <option value="{{ a }}" {% if a == selected_airline %}selected{% endif %}>{{ a }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="md:col-span-2 flex gap-2">
+      <button type="submit" class="px-4 py-2 rounded bg-slate-900 text-white text-sm">
+        Apply Filter
+      </button>
+      <a href="{{ url_for('passengers') }}" class="px-3 py-2 rounded border border-slate-300 text-sm text-slate-700">
+        Reset
+      </a>
+    </div>
+  </form>
+</div>
+
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5">
+  <h3 class="text-sm font-semibold mb-3 text-slate-700">Summary</h3>
+  <p class="text-xs mb-2">
+    Detected / Boarded: <span class="font-semibold">{{ detected_count }}</span> |
+    Not Detected: <span class="font-semibold">{{ not_detected_count }}</span>
+  </p>
+
+  {% if passengers_list %}
+  <div class="overflow-x-auto mt-3">
+    <table class="min-w-full text-xs">
+      <thead>
+        <tr class="border-b border-slate-200 text-slate-500">
+          <th class="text-left py-1 pr-3">Name</th>
+          <th class="text-left py-1 pr-3">Ticket</th>
+          <th class="text-left py-1 pr-3">Flight</th>
+          <th class="text-left py-1 pr-3">Airline</th>
+          <th class="text-left py-1 pr-3">Zone</th>
+          <th class="text-left py-1 pr-3">Status</th>
+          <th class="text-left py-1">Last Seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in passengers_list %}
+        <tr class="border-b border-slate-100">
+          <td class="py-1 pr-3">{{ p.full_name }}</td>
+          <td class="py-1 pr-3">{{ p.ticket_number }}</td>
+          <td class="py-1 pr-3">{{ p.flight_number }}</td>
+          <td class="py-1 pr-3">{{ p.airline }}</td>
+          <td class="py-1 pr-3">{{ p.last_seen_zone or "—" }}</td>
+          <td class="py-1 pr-3">{{ p.status }}</td>
+          <td class="py-1 text-[11px] text-slate-500">{{ p.last_seen_time }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-xs text-slate-500 mt-2">
+      No passengers match the selected filter.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

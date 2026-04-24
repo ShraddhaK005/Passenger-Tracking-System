@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}Passenger Tracking{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900">
+
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Top bar -->
+    <header class="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shadow">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 text-sm font-bold">
+          RT
+        </span>
+        <div>
+          <p class="text-sm font-semibold">Real-Time Passenger Tracking</p>
+          <p class="text-xs text-slate-300">Multi-Zone Airport Monitoring Console</p>
+        </div>
+      </div>
+
+      {% if session.get('user') %}
+      <div class="flex items-center gap-4 text-sm">
+        <span class="text-slate-300">Logged in as <span class="font-semibold">{{ session.get('user') }}</span></span>
+        <a href="{{ url_for('logout') }}" class="px-3 py-1.5 rounded-md bg-red-500 hover:bg-red-600 text-xs font-semibold">
+          Logout
+        </a>
+      </div>
+      {% endif %}
+    </header>
+
+    <div class="flex flex-1">
+
+      {% if session.get('user') %}
+      <!-- Sidebar when logged in -->
+      <aside class="hidden md:flex md:flex-col w-60 bg-slate-950 text-slate-100 border-r border-slate-800">
+        <div class="px-5 py-4 border-b border-slate-800">
+          <p class="text-xs uppercase tracking-wide text-slate-400">Navigation</p>
+        </div>
+        <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
+          <a href="{{ url_for('dashboard') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800">
+            <span>Dashboard</span>
+          </a>
+          <a href="{{ url_for('register') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800">
+            <span>Passenger Registration</span>
+          </a>
+          <a href="{{ url_for('track') }}" class="flex items-center px-3 py-2 rounded-md hover:bg-slate-800">
+            <span>Passenger Tracking</span>
+          </a>
+        </nav>
+        <div class="px-4 py-3 border-t border-slate-800 text-[11px] text-slate-500">
+          Built for airport operations labs.
+        </div>
+      </aside>
+      {% endif %}
+
+      <!-- Main content -->
+      <main class="flex-1 px-4 md:px-8 py-6">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4 space-y-2">
+              {% for category, message in messages %}
+                <div class="px-4 py-2 rounded-md text-sm
+                  {% if category == 'error' %} bg-red-100 text-red-800 border border-red-200
+                  {% elif category == 'success' %} bg-emerald-100 text-emerald-800 border border-emerald-200
+                  {% else %} bg-slate-100 text-slate-800 border border-slate-200 {% endif %}">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
+  </div>
+</body>
+</html>

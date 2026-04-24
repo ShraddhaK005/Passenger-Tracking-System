@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Register Passenger{% endblock %}
+
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Passenger Registration</h2>
+
+<div class="grid md:grid-cols-2 gap-6">
+  <form method="post" id="registerForm">
+    <div class="bg-white shadow rounded-lg p-4 space-y-3">
+      <h3 class="text-sm font-semibold mb-2">Personal Information</h3>
+
+      <div>
+        <label class="block text-sm mb-1">Full Name</label>
+        <input type="text" name="full_name" class="w-full border rounded px-3 py-2 text-sm" required />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Mobile Number</label>
+        <input type="text" name="mobile_number" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <h3 class="text-sm font-semibold mt-4 mb-2">Travel Information</h3>
+
+      <div>
+        <label class="block text-sm mb-1">Ticket Number</label>
+        <input type="text" name="ticket_number" class="w-full border rounded px-3 py-2 text-sm" required />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Flight Number</label>
+        <input type="text" name="flight_number" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Airline</label>
+        <input type="text" name="airline" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Destination</label>
+        <input type="text" name="destination" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Departure Date & Time</label>
+        <input type="datetime-local" name="departure_datetime" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Baggage ID</label>
+        <input type="text" name="baggage_id" class="w-full border rounded px-3 py-2 text-sm" />
+      </div>
+      <div class="mt-2">
+  <label class="inline-flex items-center text-sm">
+    <input type="checkbox" name="is_vip" class="mr-2">
+    Mark as High Priority / VIP
+  </label>
+</div>
+
+
+      <!-- Hidden fields for images -->
+      <input type="hidden" name="front_image" id="front_image" />
+      <input type="hidden" name="left_image" id="left_image" />
+      <input type="hidden" name="right_image" id="right_image" />
+
+      <button type="submit" class="mt-4 bg-slate-900 text-white px-4 py-2 rounded text-sm">
+        Register Passenger
+      </button>
+    </div>
+  </form>
+
+  <div class="bg-white shadow rounded-lg p-4">
+    <h3 class="text-sm font-semibold mb-2">Capture Live Photos</h3>
+    <p class="text-xs text-slate-500 mb-2">Capture front, left and right profiles from the live camera feed.</p>
+
+    <video id="video" autoplay playsinline class="w-full rounded mb-3 border"></video>
+    <div class="flex gap-2 mb-3">
+      <button type="button" id="captureFront" class="bg-slate-800 text-white px-3 py-1 rounded text-xs">
+        Capture Front
+      </button>
+      <button type="button" id="captureLeft" class="bg-slate-800 text-white px-3 py-1 rounded text-xs">
+        Capture Left
+      </button>
+      <button type="button" id="captureRight" class="bg-slate-800 text-white px-3 py-1 rounded text-xs">
+        Capture Right
+      </button>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2 text-xs">
+      <div>
+        <p class="mb-1">Front</p>
+        <canvas id="frontCanvas" class="w-full border rounded"></canvas>
+      </div>
+      <div>
+        <p class="mb-1">Left</p>
+        <canvas id="leftCanvas" class="w-full border rounded"></canvas>
+      </div>
+      <div>
+        <p class="mb-1">Right</p>
+        <canvas id="rightCanvas" class="w-full border rounded"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const video = document.getElementById('video');
+
+  // Start webcam
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error('Error accessing camera:', err);
+        alert('Could not access camera. Please allow camera permissions.');
+      });
+  } else {
+    alert('getUserMedia not supported in this browser.');
+  }
+
+  function captureToCanvas(canvasId, hiddenInputId) {
+    const canvas = document.getElementById(canvasId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    hiddenInput.value = dataUrl;
+  }
+
+  document.getElementById('captureFront').addEventListener('click', () => {
+    captureToCanvas('frontCanvas', 'front_image');
+  });
+  document.getElementById('captureLeft').addEventListener('click', () => {
+    captureToCanvas('leftCanvas', 'left_image');
+  });
+  document.getElementById('captureRight').addEventListener('click', () => {
+    captureToCanvas('rightCanvas', 'right_image');
+  });
+</script>
+{% endblock %}

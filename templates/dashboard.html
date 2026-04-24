@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Passenger Tracking{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-2xl font-bold text-slate-800">Dashboard</h2>
+  <div class="flex gap-2">
+    <a href="{{ url_for('passengers') }}" class="px-3 py-1.5 rounded-md bg-slate-800 text-white text-xs font-semibold">
+      View Passengers by Flight
+    </a>
+    <a href="{{ url_for('export_report') }}" class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs font-semibold">
+      Export Daily Report (CSV)
+    </a>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+
+  <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5">
+    <p class="text-xs uppercase tracking-wide text-slate-500">Total Tracked Passengers</p>
+    <p class="text-3xl font-semibold mt-2">{{ total_passengers }}</p>
+  </div>
+
+  {% for zone, count in counts.items() %}
+  <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5">
+    <p class="text-xs uppercase tracking-wide text-slate-500">{{ zone }}</p>
+    <p class="text-3xl font-semibold mt-2">{{ count }}</p>
+    <p class="text-[11px] text-slate-500 mt-1">
+      Suggested staff: <span class="font-semibold">
+        {{ staff_suggestions[zone] }}
+      </span>
+    </p>
+  </div>
+  {% endfor %}
+
+  {% if busiest_zone %}
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+    <p class="text-xs uppercase tracking-wide text-amber-700">Staff Alert</p>
+    <p class="text-sm mt-2 text-amber-900">
+      <span class="font-semibold">{{ busiest_zone }}</span> currently has the highest load.
+    </p>
+    <p class="text-xs text-amber-800 mt-1">
+      Recommended staff allocation: <span class="font-semibold">{{ busiest_staff }}</span>
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Flight level summaries -->
+{% if flight_summaries %}
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6">
+  <h3 class="text-sm font-semibold mb-3 text-slate-700">Flights Being Monitored Today</h3>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+    {% for f in flight_summaries %}
+    <div class="border border-slate-200 rounded-lg p-3">
+      <p class="font-semibold text-slate-800 mb-1">Flight {{ f.flight_number }}</p>
+      <p>Total: {{ f.total }}</p>
+      <p>Detected: {{ f.detected }} | Boarded: {{ f.boarded }}</p>
+      <p>Not Detected: {{ f.not_detected }}</p>
+      <p class="mt-1 text-[11px] text-slate-500">
+        Readiness: <span class="font-semibold">{{ f.readiness }}%</span>
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Graph + Side panels -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+  <!-- Zone bar chart -->
+  <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5 lg:col-span-2">
+    <h3 class="text-sm font-semibold mb-3 text-slate-700">Passengers per Zone</h3>
+    <canvas id="zoneChart" class="w-full" height="120"></canvas>
+  </div>
+
+  <!-- VIP + Recent -->
+  <div class="space-y-4">
+    <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5">
+      <h3 class="text-sm font-semibold mb-3 text-slate-700">VIP / High Priority</h3>
+      {% if vip_passengers %}
+        <ul class="space-y-2 text-xs">
+          {% for p in vip_passengers %}
+          <li class="border-b last:border-b-0 border-slate-100 pb-2">
+            <p class="font-semibold text-slate-800">{{ p.full_name }}</p>
+            <p>Ticket: {{ p.ticket_number }}</p>
+            <p>Flight: {{ p.flight_number }}</p>
+            <p>Last Zone: {{ p.last_seen_zone or "—" }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-xs text-slate-500">No VIP passengers registered.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5">
+      <h3 class="text-sm font-semibold mb-3 text-slate-700">Recently Seen Passengers</h3>
+
+      {% if recent_passengers %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500">
+                <th class="text-left py-1 pr-3">Name</th>
+                <th class="text-left py-1 pr-3">Ticket</th>
+                <th class="text-left py-1 pr-3">Zone</th>
+                <th class="text-left py-1">Last Seen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in recent_passengers %}
+              <tr class="border-b border-slate-100">
+                <td class="py-1 pr-3">{{ p.full_name }}</td>
+                <td class="py-1 pr-3">{{ p.ticket_number }}</td>
+                <td class="py-1 pr-3">
+                  {{ p.last_seen_zone or "—" }}
+                </td>
+                <td class="py-1 text-[11px] text-slate-500">
+                  {{ p.last_seen_time }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-xs text-slate-500">
+          No recent detections yet.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Trend chart -->
+{% if trend_labels and trend_series %}
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-4">
+  <h3 class="text-sm font-semibold mb-3 text-slate-700">Zone Load Trend (Today)</h3>
+  <canvas id="trendChart" class="w-full" height="120"></canvas>
+</div>
+{% endif %}
+<!-- Live Camera Feeds -->
+<div class="bg-white shadow-sm border border-slate-200 rounded-xl p-5 mb-6">
+  <h3 class="text-sm font-semibold mb-4 text-slate-700">Live Zone Monitoring</h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Zone A -->
+    <div>
+      <p class="text-xs font-semibold mb-2 text-slate-600">Zone A (Webcam)</p>
+      <img src="{{ url_for('video_feed', zone='A') }}" class="w-full rounded border">
+    </div>
+
+    <!-- Zone B -->
+    <div>
+      <p class="text-xs font-semibold mb-2 text-slate-600">Zone B (Mobile Camera)</p>
+      <img src="{{ url_for('video_feed', zone='B') }}" class="w-full h-96 object-cover rounded border">
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const zoneLabels = {{ zones|tojson }};
+  const zoneCounts = {{ count_values|tojson }};
+
+  const ctx = document.getElementById('zoneChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: zoneLabels,
+      datasets: [{
+        label: "Passengers",
+        data: zoneCounts,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+
+  {% if trend_labels and trend_series %}
+  const trendLabels = {{ trend_labels|tojson }};
+  const trendData = {{ trend_series|tojson }};
+
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  const zoneNames = Object.keys(trendData);
+
+  const datasets = zoneNames.map((z, idx) => {
+    return {
+      label: z,
+      data: trendData[z],
+      borderWidth: 2,
+      fill: false,
+    };
+  });
+
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: trendLabels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+  {% endif %}
+</script>
+{% endblock %}
